@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         occ-more-buttons
 // @namespace    http://tampermonkey.net/
-// @version      1.0.3
+// @version      1.0.4
 // @description  Adds more Buttons. So far: Set as manager, Set as user, Clear checkboxes and Generate QR poster.
 // @author       Ollie
 // @match        https://cloud.opus-safety.co.uk/*
@@ -9,6 +9,8 @@
 // @grant        none
 // @require      https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js
 // @require      https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js
+// @downloadURL  https://github.com/ollie-opus/occ-more-buttons/raw/refs/heads/main/occ-more-buttons.js
+// @updateURL    https://github.com/ollie-opus/occ-more-buttons/raw/refs/heads/main/occ-more-buttons.js
 // ==/UserScript==
 
 (function() {
