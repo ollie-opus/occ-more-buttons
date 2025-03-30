@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         occ-more-buttons
 // @namespace    http://tampermonkey.net/
-// @version      1.0.0
-// @description  Adds more Buttons. So far: Set as manager, Set as user, Clear checkboxes and Generate QR poster
+// @version      1.0.1
+// @description  Adds more Buttons. So far: Set as manager, Set as user, Clear checkboxes and Generate QR poster.
 // @author       Ollie
 // @match        https://cloud.opus-safety.co.uk/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=cloud.opus-safety.co.uk
