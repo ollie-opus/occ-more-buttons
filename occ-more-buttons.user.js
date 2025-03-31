@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         occ-more-buttons
 // @namespace    http://tampermonkey.net/
-// @version      1.0.10
+// @version      1.0.11
 // @description  Adds more Buttons. So far: Set as manager, Set as user, Clear checkboxes and Generate QR poster.
 // @author       Ollie
 // @match        https://cloud.opus-safety.co.uk/*
@@ -170,7 +170,7 @@
         button.style.top = '10px';
         button.style.right = '310px';
         button.style.padding = '9px 13px';
-        button.style.backgroundColor = '#0064e3';
+        button.style.backgroundColor = '#db2777';
         button.style.color = 'white';
         button.style.border = 'none';
         button.style.borderRadius = '3px';
@@ -199,7 +199,7 @@
         button.style.top = '10px';
         button.style.right = '210px';
         button.style.padding = '9px 13px';
-        button.style.backgroundColor = '#0064e3';
+        button.style.backgroundColor = '#db2777';
         button.style.color = 'white';
         button.style.border = 'none';
         button.style.borderRadius = '3px';
@@ -283,7 +283,7 @@
         button.style.top = '10px';
         button.style.right = '70px';
         button.style.padding = '9px 13px';
-        button.style.backgroundColor = '#db2777';
+        button.style.backgroundColor = '#db2777'; // opus pink
         button.style.color = 'white';
         button.style.border = 'none';
         button.style.borderRadius = '3px';
