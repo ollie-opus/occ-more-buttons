@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         occ-more-buttons
 // @namespace    http://tampermonkey.net/
-// @version      1.0.11
+// @version      1.1.0
 // @description  Adds more Buttons. So far: Set as manager, Set as user, Clear checkboxes and Generate QR poster.
 // @author       Ollie
 // @match        https://cloud.opus-safety.co.uk/*
@@ -25,6 +25,69 @@
         checkboxes.forEach(checkbox => checkbox.checked = false);
     }
 
+    function navigateToNewTrainingPage() {
+
+        let sitePath = window.location.pathname;
+        let match = sitePath.match(/\/sites\/([a-f0-9\-]{36})/); // Regex to match the UUID format
+        if (match) {
+            let siteuuid = match[1]; // UUID is captured in the first group
+            let trainingPageUrl = window.location.origin + '/admin/sites/' + siteuuid + '/templates/trainings/new?filter_type=employee_role&measurement_type=training&more_buttons_automation_7dca63d3';
+            window.location.href = trainingPageUrl;
+        } else {
+            alert("Could not find site UUID in the URL.");
+        }
+    }
+
+    function navigateToNewEmployeePage() {
+
+        let sitePath = window.location.pathname;
+        let match = sitePath.match(/\/sites\/([a-f0-9\-]{36})/); // Regex to match the UUID format
+        if (match) {
+            let siteuuid = match[1]; // UUID is captured in the first group
+            let trainingPageUrl = window.location.origin + '/admin/sites/' + siteuuid + '/employees/new?more_buttons_automation_7dca63d3';
+            window.location.href = trainingPageUrl;
+        } else {
+            alert("Could not find site UUID in the URL.");
+        }
+    }
+
+    function navigateToRolePage() {
+
+        let sitePath = window.location.pathname;
+        let match = sitePath.match(/\/sites\/([a-f0-9\-]{36})/); // Regex to match the UUID format
+        if (match) {
+            let siteuuid = match[1]; // UUID is captured in the first group
+            let trainingPageUrl = window.location.origin + '/admin/sites/' + siteuuid + '/employees/roles';
+            window.location.href = trainingPageUrl;
+        } else {
+            alert("Could not find site UUID in the URL.");
+        }
+    }
+
+    function copyRoleCheckboxValue() {
+        const checkboxes = document.querySelectorAll('input[name*="[roles]"]');
+        let tsv = 'Role\tValue\n'; // TSV header
+
+        checkboxes.forEach(checkbox => {
+            const id = checkbox.id;
+            const label = document.querySelector(`label[for="${id}"]`);
+
+            if (label) {
+                // Escape tabs/newlines and wrap in double quotes if needed
+                const labelText = label.textContent.trim().replace(/"/g, '""');
+                const valueText = checkbox.value.replace(/"/g, '""');
+                tsv += `"${labelText}"\t"${valueText}"\n`;
+            }
+        });
+
+        // Copy to clipboard
+        navigator.clipboard.writeText(tsv)
+            .then(() => alert('Data copied to clipboard!'))
+            .catch(err => console.error('Failed to copy data:', err));
+
+        navigateToRolePage();
+    }
+
     function selectManager() {
         // Select the <select> element
         var selectElement = document.querySelector('.form-input.form-select');
@@ -46,6 +109,21 @@
 
         // Change the value
         selectElement.value = "user";
+
+        // Trigger the change event manually
+        var event = new Event('change', {
+            'bubbles': true, // Event will bubble up through the DOM
+            'cancelable': true // Allow the event to be canceled
+        });
+        selectElement.dispatchEvent(event);
+    }
+
+    function selectNoAccess() {
+        // Select the <select> element
+        var selectElement = document.querySelector('.form-input.form-select');
+
+        // Change the value
+        selectElement.value = "";
 
         // Trigger the change event manually
         var event = new Event('change', {
@@ -217,6 +295,35 @@
         document.body.appendChild(button);
     }
 
+    function addNoAccessButton() {
+        if (document.getElementById('setNoAccessButton')) return;
+
+        let button = document.createElement('button');
+        button.id = 'setNoAccessButton';
+        button.innerText = 'Remove access';
+        button.title = 'Set this employee as access -';
+        button.style.position = 'fixed';
+        button.style.top = '10px';
+        button.style.right = '439px';
+        button.style.padding = '9px 13px';
+        button.style.backgroundColor = '#db2777';
+        button.style.color = 'white';
+        button.style.border = 'none';
+        button.style.borderRadius = '3px';
+        button.style.cursor = 'pointer';
+        button.style.zIndex = '1000';
+        button.style.fontWeight = '500';
+        button.style.fontFamily = 'RubikVariable, ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji';
+        button.style.fontSize = '.875rem';
+
+        button.addEventListener('click', function() {
+            selectNoAccess();
+            submitAccessForm();
+        });
+
+        document.body.appendChild(button);
+    }
+
     function addCheckboxButton() {
         if (document.getElementById('clearCheckboxes')) return;
 
@@ -240,6 +347,62 @@
 
         button.addEventListener('click', function() {
             clearAllCheckboxes();
+        });
+
+        document.body.appendChild(button);
+    }
+
+    function addCopyRoleTagButton() {
+        if (document.getElementById('copyRoleTag')) return;
+
+        let button = document.createElement('button');
+        button.id = 'copyRoleTag';
+        button.innerText = 'Copy Role Tags';
+        button.title = 'Copy all Role Tags in CSV format (for Ollies scripts)';
+        button.style.position = 'fixed';
+        button.style.top = '10px';
+        button.style.right = '70px';
+        button.style.padding = '9px 13px';
+        button.style.backgroundColor = '#db2777';
+        button.style.color = 'white';
+        button.style.border = 'none';
+        button.style.borderRadius = '3px';
+        button.style.cursor = 'pointer';
+        button.style.zIndex = '1000';
+        button.style.fontWeight = '500';
+        button.style.fontFamily = 'RubikVariable, ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji';
+        button.style.fontSize = '.875rem';
+
+        button.addEventListener('click', function() {
+            navigateToNewTrainingPage();
+        });
+
+        document.body.appendChild(button);
+    }
+
+    function addCopyRoleUUIDButton() {
+        if (document.getElementById('copyRoleUUID')) return;
+
+        let button = document.createElement('button');
+        button.id = 'copyRoleUUID';
+        button.innerText = 'Copy Role UUIDs';
+        button.title = 'Copy all Role UUIDs in CSV format (for Ollies scripts)';
+        button.style.position = 'fixed';
+        button.style.top = '10px';
+        button.style.right = '200px';
+        button.style.padding = '9px 13px';
+        button.style.backgroundColor = '#db2777';
+        button.style.color = 'white';
+        button.style.border = 'none';
+        button.style.borderRadius = '3px';
+        button.style.cursor = 'pointer';
+        button.style.zIndex = '1000';
+        button.style.fontWeight = '500';
+        button.style.fontFamily = 'RubikVariable, ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji';
+        button.style.fontSize = '.875rem';
+
+        button.addEventListener('click', function() {
+            navigateToNewEmployeePage();
         });
 
         document.body.appendChild(button);
@@ -318,9 +481,32 @@
             setTimeout(() => {
                 addManagerButton(); // Trigger addButton
                 addUserButton(); // Trigger addButton
+                addNoAccessButton();
             }, 1000);
         } else {
             return; // If URL doesn't match, stop the script
+        }
+    }
+
+    function handleRolePageFilter() {
+        if (window.location.href.includes("employees") || window.location.href.includes("training")) {
+            const urlPattern = /^https:\/\/cloud\.opus-safety\.co\.uk\/admin\/sites\/[a-f0-9-]+\/employees\/roles$/;
+
+            if (urlPattern.test(window.location.href)) {
+                setTimeout(() => {
+                    addCopyRoleTagButton(); // Trigger addButton
+                    addCopyRoleUUIDButton();
+                    // add more buttons if needed
+                }, 1000);
+            }
+
+            if (window.location.href.includes('more_buttons_automation_7dca63d3')) {
+                setTimeout(() => {
+                    copyRoleCheckboxValue();
+                }, 1000);
+            } // if on new employee or new training page (for role tag/uuid)
+
+
         }
     }
 
@@ -349,8 +535,6 @@
         }
     }
 
-
-
     // 4th ORDER FUNCTIONS
 
     function executescript() {
@@ -359,6 +543,7 @@
             handleAccessPageFilter();
             handleEditPageFilter();
             handleQRPageFilter();
+            handleRolePageFilter();
         }
 
         // Intercept pushState and replaceState for SPA URL changes
