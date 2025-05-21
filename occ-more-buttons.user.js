@@ -458,7 +458,7 @@
 
         let button = document.createElement('button');
         button.id = 'copyChecklistQuestions';
-        button.innerText = 'Copy Checklist Questions';
+        button.innerText = 'Copy checklist questions';
         button.title = 'Copy all questions for this checklist';
         button.style.position = 'fixed';
         button.style.top = '10px';
