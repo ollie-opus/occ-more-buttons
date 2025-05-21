@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         occ-more-buttons
 // @namespace    http://tampermonkey.net/
-// @version      1.1.2
+// @version      1.1.3
 // @description  Adds more Buttons. So far: Set as manager, Set as user, Clear checkboxes and Generate QR poster.
 // @author       Ollie
 // @match        https://cloud.opus-safety.co.uk/*
@@ -91,6 +91,11 @@
     function copyChecklistQuestions() {
         // open the details element
         document.querySelector('details[aria-labelledby="questions-section-title"]').open = true;
+
+        //open potential sections
+        document.querySelectorAll('button[data-collapse-target="trigger"][aria-expanded="false"]').forEach(button => {
+            button.click();
+        });
 
         // Get the page title
         const titleElement = document.querySelector('#page-title');
