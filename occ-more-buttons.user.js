@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         occ-more-buttons
 // @namespace    http://tampermonkey.net/
-// @version      1.1.1
+// @version      1.1.2
 // @description  Adds more Buttons. So far: Set as manager, Set as user, Clear checkboxes and Generate QR poster.
 // @author       Ollie
 // @match        https://cloud.opus-safety.co.uk/*
@@ -86,6 +86,46 @@
             .catch(err => console.error('Failed to copy data:', err));
 
         navigateToRolePage();
+    }
+
+    function copyChecklistQuestions() {
+        // open the details element
+        document.querySelector('details[aria-labelledby="questions-section-title"]').open = true;
+
+        // Get the page title
+        const titleElement = document.querySelector('#page-title');
+        let pageTitle = titleElement ? titleElement.innerText.trim() : "Untitled Checklist";
+
+        // Remove "Checklist: " if present and add " questions"
+        pageTitle = pageTitle.replace(/^Checklist:\s*/i, "").trim() + " questions";
+
+        // Select the specific table with class "0"
+        const table = document.querySelector('table.\\30');
+        if (!table) {
+            alert("Table not found.");
+            return;
+        }
+
+        const rows = table.querySelectorAll("tr");
+        const questions = [];
+
+        rows.forEach(row => {
+            const cells = row.querySelectorAll("td");
+            if (cells.length > 0) {
+                const questionText = cells[0].innerText.trim();
+                if (questionText) {
+                    questions.push([questionText]);
+                }
+            }
+        });
+
+        // Prepend the modified title
+        const allLines = [[pageTitle], ...questions];
+        const tsv = allLines.map(line => line.join("\t")).join("\n");
+
+        navigator.clipboard.writeText(tsv)
+            .then(() => alert('Checklist questions copied to clipboard!'))
+            .catch(err => console.error('Failed to copy data:', err));
     }
 
     function selectManager() {
@@ -408,6 +448,34 @@
         document.body.appendChild(button);
     }
 
+    function addCopyChecklistQuestionsButton() {
+        if (document.getElementById('copyChecklistQuestions')) return;
+
+        let button = document.createElement('button');
+        button.id = 'copyChecklistQuestions';
+        button.innerText = 'Copy Checklist Questions';
+        button.title = 'Copy all questions for this checklist';
+        button.style.position = 'fixed';
+        button.style.top = '10px';
+        button.style.right = '70px';
+        button.style.padding = '9px 13px';
+        button.style.backgroundColor = '#db2777';
+        button.style.color = 'white';
+        button.style.border = 'none';
+        button.style.borderRadius = '3px';
+        button.style.cursor = 'pointer';
+        button.style.zIndex = '1000';
+        button.style.fontWeight = '500';
+        button.style.fontFamily = 'RubikVariable, ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji';
+        button.style.fontSize = '.875rem';
+
+        button.addEventListener('click', function() {
+            copyChecklistQuestions();
+        });
+
+        document.body.appendChild(button);
+    }
+
     function generateQRCodeForTransformedURL(currentURL, callback) {
         // Transform the URL for the QR code
         let transformedURL = transformURLForQRCode(currentURL);
@@ -482,6 +550,16 @@
                 addManagerButton(); // Trigger addButton
                 addUserButton(); // Trigger addButton
                 addNoAccessButton();
+            }, 1000);
+        } else {
+            return; // If URL doesn't match, stop the script
+        }
+    }
+
+    function handleChecklistTemplatePageFilter() {
+        if (window.location.href.includes("templates/checklists/dGF")) {
+            setTimeout(() => {
+                addCopyChecklistQuestionsButton();
             }, 1000);
         } else {
             return; // If URL doesn't match, stop the script
@@ -576,6 +654,7 @@
             handleQRPageFilter();
             handleRolePageFilter();
             handleMPPFilters();
+            handleChecklistTemplatePageFilter();
         }
 
         // Intercept pushState and replaceState for SPA URL changes
@@ -610,5 +689,6 @@
 
     // EXECUTION
     executescript();
+
 
 })();
