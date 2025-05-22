@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         occ-more-buttons
 // @namespace    http://tampermonkey.net/
-// @version      1.1.4
+// @version      1.1.5
 // @description  Adds more Buttons. So far: Set as manager, Set as user, Clear checkboxes and Generate QR poster.
 // @author       Ollie
 // @match        https://cloud.opus-safety.co.uk/*
@@ -82,30 +82,6 @@
         } else {
             alert("Could not find site UUID in the URL.");
         }
-    }
-
-    function copyRoleCheckboxValue(type) {
-        const checkboxes = document.querySelectorAll('input[name*="[roles]"]');
-        let tsv = 'Role\tValue\n'; // TSV header
-
-        checkboxes.forEach(checkbox => {
-            const id = checkbox.id;
-            const label = document.querySelector(`label[for="${id}"]`);
-
-            if (label) {
-                // Escape tabs/newlines and wrap in double quotes if needed
-                const labelText = label.textContent.trim().replace(/"/g, '""');
-                const valueText = checkbox.value.replace(/"/g, '""');
-                tsv += `"${labelText}"\t"${valueText}"\n`;
-            }
-        });
-
-        // Copy to clipboard
-        navigator.clipboard.writeText(tsv)
-            .then(() => alert('Data copied to clipboard!'))
-            .catch(err => console.error('Failed to copy data:', err));
-
-        navigateToRolePage(type);
     }
 
     function copyChecklistQuestions() {
@@ -301,6 +277,35 @@
     }
 
     // 2nd ORDER FUNCTIONS
+
+    function copyRoleCheckboxValue(type) {
+        const checkboxes = document.querySelectorAll('input[name*="[roles]"]');
+        let tsv = 'Role\tValue\n'; // TSV header
+
+        checkboxes.forEach(checkbox => {
+            const id = checkbox.id;
+            const label = document.querySelector(`label[for="${id}"]`);
+
+            if (label) {
+                let labelText = label.textContent.trim().replace(/"/g, '""');
+
+                // Add apostrophe if label starts with a "+"
+                if (labelText.startsWith('+')) {
+                    labelText = `'${labelText}`;
+                }
+
+                const valueText = checkbox.value.replace(/"/g, '""');
+                tsv += `"${labelText}"\t"${valueText}"\n`;
+            }
+        });
+
+        // Copy to clipboard
+        navigator.clipboard.writeText(tsv)
+            .then(() => alert('Data copied to clipboard!'))
+            .catch(err => console.error('Failed to copy data:', err));
+
+        navigateToRolePage(type);
+    }
 
     function addManagerButton() {
         if (document.getElementById('setManagerButton')) return;
