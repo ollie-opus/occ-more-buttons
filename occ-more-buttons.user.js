@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         occ-more-buttons
 // @namespace    http://tampermonkey.net/
-// @version      1.1.3
+// @version      1.1.4
 // @description  Adds more Buttons. So far: Set as manager, Set as user, Clear checkboxes and Generate QR poster.
 // @author       Ollie
 // @match        https://cloud.opus-safety.co.uk/*
@@ -25,14 +25,24 @@
         checkboxes.forEach(checkbox => checkbox.checked = false);
     }
 
-    function navigateToNewTrainingPage() {
+    function navigateToNewDocumentPage(type) {
+        const sitePath = window.location.pathname;
+        const match = sitePath.match(/\/sites\/([a-f0-9\-]{36})/); // Regex to match the UUID format
 
-        let sitePath = window.location.pathname;
-        let match = sitePath.match(/\/sites\/([a-f0-9\-]{36})/); // Regex to match the UUID format
         if (match) {
-            let siteuuid = match[1]; // UUID is captured in the first group
-            let trainingPageUrl = window.location.origin + '/admin/sites/' + siteuuid + '/templates/trainings/new?filter_type=employee_role&measurement_type=training&more_buttons_automation_7dca63d3';
-            window.location.href = trainingPageUrl;
+            const siteuuid = match[1]; // UUID is captured in the first group
+            let documentPageUrl;
+
+            if (type === 'employee') {
+                documentPageUrl = `${window.location.origin}/admin/sites/${siteuuid}/templates/documents/new?data_type=pdf&filter_type=employee_role&more_buttons_automation_7dca63d3`;
+            } else if (type === 'asset') {
+                documentPageUrl = `${window.location.origin}/admin/sites/${siteuuid}/templates/documents/new?data_type=pdf&filter_type=asset_role&more_buttons_automation_c6e56e7f`;
+            } else {
+                alert("Invalid document page type specified.");
+                return;
+            }
+
+            window.location.href = documentPageUrl;
         } else {
             alert("Could not find site UUID in the URL.");
         }
@@ -51,20 +61,30 @@
         }
     }
 
-    function navigateToRolePage() {
+    function navigateToRolePage(type) {
+        const sitePath = window.location.pathname;
+        const match = sitePath.match(/\/sites\/([a-f0-9\-]{36})/); // Regex to match the UUID format
 
-        let sitePath = window.location.pathname;
-        let match = sitePath.match(/\/sites\/([a-f0-9\-]{36})/); // Regex to match the UUID format
         if (match) {
-            let siteuuid = match[1]; // UUID is captured in the first group
-            let trainingPageUrl = window.location.origin + '/admin/sites/' + siteuuid + '/employees/roles';
-            window.location.href = trainingPageUrl;
+            const siteuuid = match[1]; // UUID is captured in the first group
+            let rolePageUrl;
+
+            if (type === 'employee') {
+                rolePageUrl = `${window.location.origin}/admin/sites/${siteuuid}/employees/roles`;
+            } else if (type === 'asset') {
+                rolePageUrl = `${window.location.origin}/admin/sites/${siteuuid}/equipments/asset-types`;
+            } else {
+                alert("Invalid role page type specified.");
+                return;
+            }
+
+            window.location.href = rolePageUrl;
         } else {
             alert("Could not find site UUID in the URL.");
         }
     }
 
-    function copyRoleCheckboxValue() {
+    function copyRoleCheckboxValue(type) {
         const checkboxes = document.querySelectorAll('input[name*="[roles]"]');
         let tsv = 'Role\tValue\n'; // TSV header
 
@@ -85,7 +105,7 @@
             .then(() => alert('Data copied to clipboard!'))
             .catch(err => console.error('Failed to copy data:', err));
 
-        navigateToRolePage();
+        navigateToRolePage(type);
     }
 
     function copyChecklistQuestions() {
@@ -419,7 +439,35 @@
         button.style.fontSize = '.875rem';
 
         button.addEventListener('click', function() {
-            navigateToNewTrainingPage();
+            navigateToNewDocumentPage('employee');
+        });
+
+        document.body.appendChild(button);
+    }
+
+    function addCopyAssetTypeTagButton() {
+        if (document.getElementById('copyAssetTypeTag')) return;
+
+        let button = document.createElement('button');
+        button.id = 'copyAssetTypeTag';
+        button.innerText = 'Copy Asset Type Tags';
+        button.title = 'Copy all Asset Type Tags in CSV format (for Ollies scripts)';
+        button.style.position = 'fixed';
+        button.style.top = '10px';
+        button.style.right = '70px';
+        button.style.padding = '9px 13px';
+        button.style.backgroundColor = '#db2777';
+        button.style.color = 'white';
+        button.style.border = 'none';
+        button.style.borderRadius = '3px';
+        button.style.cursor = 'pointer';
+        button.style.zIndex = '1000';
+        button.style.fontWeight = '500';
+        button.style.fontFamily = 'RubikVariable, ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji';
+        button.style.fontSize = '.875rem';
+
+        button.addEventListener('click', function() {
+            navigateToNewDocumentPage('asset');
         });
 
         document.body.appendChild(button);
@@ -572,10 +620,11 @@
     }
 
     function handleRolePageFilter() {
-        if (window.location.href.includes("employees") || window.location.href.includes("training")) {
-            const urlPattern = /^https:\/\/cloud\.opus-safety\.co\.uk\/admin\/sites\/[a-f0-9-]+\/employees\/roles$/;
+        if (window.location.href.includes("roles") || window.location.href.includes("asset-types") || window.location.href.includes("documents") || window.location.href.includes("employees")) {
+            const employeeRolesUrlPattern = /^https:\/\/cloud\.opus-safety\.co\.uk\/admin\/sites\/[a-f0-9-]+\/employees\/roles$/;
+            const assetRolesUrlPattern = /^https:\/\/cloud\.opus-safety\.co\.uk\/admin\/sites\/[a-f0-9-]+\/equipments\/asset-types$/;
 
-            if (urlPattern.test(window.location.href)) {
+            if (employeeRolesUrlPattern.test(window.location.href)) {
                 setTimeout(() => {
                     addCopyRoleTagButton(); // Trigger addButton
                     addCopyRoleUUIDButton();
@@ -583,12 +632,24 @@
                 }, 1000);
             }
 
+            if (assetRolesUrlPattern.test(window.location.href)) {
+                setTimeout(() => {
+                    addCopyAssetTypeTagButton();
+                    // add more buttons if needed
+                }, 1000);
+            }
+
             if (window.location.href.includes('more_buttons_automation_7dca63d3')) {
                 setTimeout(() => {
-                    copyRoleCheckboxValue();
+                    copyRoleCheckboxValue('employee');
                 }, 1000);
-            } // if on new employee or new training page (for role tag/uuid)
+            } // if employee role
 
+            if (window.location.href.includes('more_buttons_automation_c6e56e7f')) {
+                setTimeout(() => {
+                    copyRoleCheckboxValue('asset');
+                }, 1000);
+            } // if asset role
 
         }
     }
