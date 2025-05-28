@@ -660,7 +660,7 @@
     }
 
     function handleNewDocumentPageFilter() {
-        if (window.location.href.includes("documents/new?")) {
+        if (window.location.href.includes("documents/new?data")) {
             setTimeout(() => {
                 addAnnualDocumentDefaultButton();
             }, 1000);
