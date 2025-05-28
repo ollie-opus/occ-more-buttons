@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         occ-more-buttons
 // @namespace    http://tampermonkey.net/
-// @version      1.1.5
+// @version      1.1.6
 // @description  Adds more Buttons. So far: Set as manager, Set as user, Clear checkboxes and Generate QR poster.
 // @author       Ollie
 // @match        https://cloud.opus-safety.co.uk/*
@@ -23,6 +23,13 @@
     function clearAllCheckboxes() {
         const checkboxes = document.querySelectorAll('input[type="checkbox"]');
         checkboxes.forEach(checkbox => checkbox.checked = false);
+    }
+
+    function annualDocumentDefault() {
+        document.getElementById('document_scope').value = 'anonymous';
+        document.getElementById('document_measurement_reminder_severity').value = 'minor';
+        document.getElementById('document_measurement_reminder_interval').value = 'P1Y';
+        document.getElementById('document_measurement_reminder_lead_time').value = 'P14D';
     }
 
     function navigateToNewDocumentPage(type) {
@@ -506,6 +513,34 @@
         document.body.appendChild(button);
     }
 
+        function addAnnualDocumentDefaultButton() {
+        if (document.getElementById('annualDocumentDefault')) return;
+
+        let button = document.createElement('button');
+        button.id = 'annualDocumentDefault';
+        button.innerText = 'Set annual default';
+        button.title = 'Sets scope to anonymous. Sets severity to minor. Sets interval to 1 year. Sets lead time to 2 weeks.';
+        button.style.position = 'fixed';
+        button.style.top = '10px';
+        button.style.right = '70px';
+        button.style.padding = '9px 13px';
+        button.style.backgroundColor = '#db2777';
+        button.style.color = 'white';
+        button.style.border = 'none';
+        button.style.borderRadius = '3px';
+        button.style.cursor = 'pointer';
+        button.style.zIndex = '1000';
+        button.style.fontWeight = '500';
+        button.style.fontFamily = 'RubikVariable, ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji';
+        button.style.fontSize = '.875rem';
+
+        button.addEventListener('click', function() {
+            annualDocumentDefault();
+        });
+
+        document.body.appendChild(button);
+    }
+
     function addCopyChecklistQuestionsButton() {
         if (document.getElementById('copyChecklistQuestions')) return;
 
@@ -624,6 +659,16 @@
         }
     }
 
+    function handleNewDocumentPageFilter() {
+        if (window.location.href.includes("documents/new") || window.location.href.includes("documents/edit")) {
+            setTimeout(() => {
+                addAnnualDocumentDefaultButton();
+            }, 1000);
+        } else {
+            return; // If URL doesn't match, stop the script
+        }
+    }
+
     function handleRolePageFilter() {
         if (window.location.href.includes("roles") || window.location.href.includes("asset-types") || window.location.href.includes("documents") || window.location.href.includes("employees")) {
             const employeeRolesUrlPattern = /^https:\/\/cloud\.opus-safety\.co\.uk\/admin\/sites\/[a-f0-9-]+\/employees\/roles$/;
@@ -655,7 +700,6 @@
                     copyRoleCheckboxValue('asset');
                 }, 1000);
             } // if asset role
-
         }
     }
 
@@ -726,6 +770,7 @@
             handleRolePageFilter();
             handleMPPFilters();
             handleChecklistTemplatePageFilter();
+            handleNewDocumentPageFilter();
         }
 
         // Intercept pushState and replaceState for SPA URL changes
