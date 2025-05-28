@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         occ-more-buttons
 // @namespace    http://tampermonkey.net/
-// @version      1.1.6
+// @version      1.1.7
 // @description  Adds more Buttons. So far: Set as manager, Set as user, Clear checkboxes and Generate QR poster.
 // @author       Ollie
 // @match        https://cloud.opus-safety.co.uk/*
@@ -660,7 +660,7 @@
     }
 
     function handleNewDocumentPageFilter() {
-        if (window.location.href.includes("documents/new") || window.location.href.includes("documents/edit")) {
+        if (window.location.href.includes("documents/new?")) {
             setTimeout(() => {
                 addAnnualDocumentDefaultButton();
             }, 1000);
