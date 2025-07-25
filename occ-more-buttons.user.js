@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         occ-more-buttons
 // @namespace    http://tampermonkey.net/
-// @version      1.1.9
+// @version      1.1.10
 // @description  Adds more Buttons. So far: Set as manager, Set as user, Clear checkboxes and Generate QR poster.
 // @author       Ollie
 // @match        https://cloud.opus-safety.co.uk/*
@@ -20,9 +20,124 @@
 
     // 1st ORDER FUNCTIONS
 
+    function injectGoogleMaterialIcons() {
+        if (!document.getElementById('google-material-icons-css')) {
+            const link = document.createElement('link');
+            link.id = 'google-material-icons-css';
+            link.rel = 'stylesheet';
+            link.href = 'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined';
+            document.head.appendChild(link);
+        }
+    }
+
+    function createMaterialIcon(iconName, size) {
+        const icon = document.createElement('span');
+        icon.className = 'material-symbols-outlined';
+        icon.textContent = iconName;
+        icon.style.fontSize = size;      // inherit parent's font size
+        icon.style.marginRight = '0.2em';
+        return icon;
+    }
+
     function clearAllCheckboxes() {
         const checkboxes = document.querySelectorAll('input[type="checkbox"]');
         checkboxes.forEach(checkbox => checkbox.checked = false);
+    }
+
+    function navigateToEmployeePageForSeedClientRegEmail() {
+        sessionStorage.setItem('source_url', window.location.href.split('?')[0]);
+        const currentUrl = window.location.href.split('?')[0];
+        const baseUrl = currentUrl.split('/link')[0];
+
+        const referrer = sessionStorage.getItem('source_url') || '';
+        const encodedReferrer = encodeURIComponent(referrer);
+
+        // Clean up the sessionStorage
+        sessionStorage.removeItem('source_url');
+
+        // Construct the final URL with both query parameters
+        const finalUrl = `${baseUrl}?source_url=${encodedReferrer}&more_buttons_automation_70d24924`;
+
+        window.location.href = finalUrl;
+    }
+
+    function copySeedClientRegEmail() {
+        const getHtmlMessage = (uuid, regLink) => `
+  <h2 style="color: #002e72;">Welcome to the Opus Compliance Cloud</h2>
+
+  <p>Your Opus consultant has published an audit for you to view. To access your published audit reports, please follow the two simple registration steps below:</p>
+
+  <h3 style="color: #002e72;">Step 1: 🔨 Create your Opus account</h3>
+
+  <p>Click the unique registration link below and select <b>Sign up</b> to create your Opus account:</p>
+
+  <p><a href="${regLink}" target="_blank" rel="noopener noreferrer">${regLink}</a></p>
+
+  <h3 style="color: #002e72;">Step 2: 🔗 Link your Opus account to your employee record</h3>
+
+  <p>After creating your account, click <b>Link my account</b> on the following page to connect your Opus account to your employee record.</p>
+  <hr>
+  <h3 style="color: #002e72;">📃 Accessing your audit reports</h3>
+
+  <p>Once registered, you can access your audit report(s) by <a href="https://cloud.opus-safety.co.uk/admin/sites/${uuid}/compliance-reports" target="_blank" rel="noopener noreferrer">clicking here</a>.<br>
+  <i>(We recommend bookmarking this webpage for easy future access.)</i></p>
+
+  <h3 style="color: #002e72;">🔔 Stay informed <i>(recommended)</i></h3>
+
+  <p>To receive email notifications when future audits are published for your site(s), <a href="https://cloud.opus-safety.co.uk/sites/${uuid}/todos?todo_subscriptions#system/audit_review-email-severity" target="_blank" rel="noopener noreferrer">please click here</a>, select "Always" in the highlighted dropdown option and then click the blue "Save changes" button at the bottom.</p>
+
+  <h3 style="color: #002e72;">👋 Need assistance?</h3>
+
+  <p>Our Opus Knowledge Base is always available. Access it by clicking your profile icon in the top right corner of the system and selecting Support.</p>
+  <hr>
+  <p>We hope you enjoy using the Opus system. Please don’t hesitate to contact us if you have any questions or feedback.</p>
+
+  <p>Best regards,<br>
+  <b style="color: #002e72;">The Opus Compliance Cloud Team</b></p>
+`;
+
+        (async () => {
+            const dropdownTrigger = document.querySelector('.site-select__current');
+            if (!dropdownTrigger) {
+                alert('Dropdown trigger not found');
+                return;
+            }
+
+            dropdownTrigger.click();
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            const siteItems = document.querySelectorAll('.site-index_parent');
+            const uuids = Array.from(siteItems).map(item => {
+                const anchor = item.querySelector('a[href^="/sites/"]');
+                if (!anchor) return null;
+                const href = anchor.getAttribute('href');
+                const match = href.match(/\/sites\/([a-f0-9\-]{36})/);
+                return match ? match[1] : null;
+            }).filter(Boolean);
+
+            if (uuids.length === 0) {
+                alert('No UUIDs found in the dropdown');
+                return;
+            }
+
+            const uuid = uuids[0];
+            const regLink = decodeURIComponent(new URLSearchParams(window.location.search).get('source_url'));
+
+            const finalHtml = getHtmlMessage(uuid, regLink);
+
+            try {
+                await navigator.clipboard.write([
+                    new ClipboardItem({
+                        "text/html": new Blob([finalHtml], { type: "text/html" }),
+                        "text/plain": new Blob([finalHtml.replace(/<[^>]+>/g, '')], { type: "text/plain" }),
+                    })
+                ]);
+                alert('Seed client registration email copied to clipboard!');
+            } catch (err) {
+                alert('Failed to copy rich text: ' + err);
+            }
+            window.location.href = regLink
+        })();
     }
 
     function auditCSVExport() {
@@ -648,7 +763,6 @@
 
         let button = document.createElement('button');
         button.id = 'generateSiteQRPoster';
-        button.innerText = 'Generate QR poster';
         button.title = 'Generate a new QR code and poster for this site/asset/employee';
         button.style.position = 'fixed';
         button.style.top = '10px';
@@ -663,6 +777,14 @@
         button.style.fontWeight = '500';
         button.style.fontFamily = 'RubikVariable, ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji';
         button.style.fontSize = '.875rem';
+
+        let icon = createMaterialIcon('qr_code', '130%')
+
+        // Add icon and text to button
+        button.style.display = 'flex';
+        button.style.alignItems = 'center';
+        button.appendChild(icon);
+        button.appendChild(document.createTextNode('Generate QR poster'));
 
         button.addEventListener('click', function() {
             siteQRConfirmationAndNavigation();
@@ -698,6 +820,98 @@
 
         document.body.appendChild(button);
     }
+
+    function addGenerateSeedClientEmailButton() {
+        if (document.getElementById('generateSeedClientEmail')) return;
+
+        let button = document.createElement('button');
+        button.id = 'generateSeedClientEmail';
+        button.title = 'Generates a tailored registration email to send to this seed client employee';
+
+        // Clear text first and then add icon + text
+        button.style.position = 'absolute';
+        button.style.top = '10px';
+        button.style.right = '30px';
+        button.style.padding = '9px 13px';
+        button.style.backgroundColor = '#047857';
+        button.style.color = 'white';
+        button.style.border = 'none';
+        button.style.borderRadius = '3px';
+        button.style.cursor = 'pointer';
+        button.style.zIndex = '1000';
+        button.style.fontWeight = '500';
+        button.style.fontFamily = 'RubikVariable, ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji';
+        button.style.fontSize = '.875rem';
+        button.style.display = 'flex';
+        button.style.alignItems = 'center';
+        button.style.gap = '6px';
+
+        let icon = createMaterialIcon('eco', '130%')
+
+        // Add icon and text to button
+        button.style.display = 'flex';
+        button.style.alignItems = 'center';
+        button.appendChild(icon);
+        button.appendChild(document.createTextNode('Generate seed e-mail'));
+
+        button.addEventListener('click', function() {
+            navigateToEmployeePageForSeedClientRegEmail();
+        });
+
+        document.body.appendChild(button);
+    }
+
+    function addGenerateSeedClientEmailConfirmButton() {
+        if (document.getElementById('generateSeedClientEmailOverlay')) return;
+
+        // Lock scrolling
+        document.body.style.overflow = 'hidden';
+
+        // Create the overlay
+        let overlay = document.createElement('div');
+        overlay.id = 'generateSeedClientEmailOverlay';
+        overlay.style.position = 'fixed';
+        overlay.style.top = '0';
+        overlay.style.left = '0';
+        overlay.style.width = '100vw';
+        overlay.style.height = '100vh';
+        overlay.style.backgroundColor = 'rgba(255, 255, 255, 0.5)';
+        overlay.style.zIndex = '999';
+        overlay.style.display = 'flex';
+        overlay.style.justifyContent = 'center';
+        overlay.style.alignItems = 'center';
+
+        // Create the button
+        let button = document.createElement('button');
+        button.id = 'generateSeedClientEmailConfirm';
+        button.style.padding = '9px 19px';
+        button.style.backgroundColor = '#047857';
+        button.style.color = 'white';
+        button.style.border = 'none';
+        button.style.borderRadius = '5px';
+        button.style.cursor = 'pointer';
+        button.style.fontWeight = '500';
+        button.style.fontFamily = 'RubikVariable, ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji';
+        button.style.fontSize = '2rem';
+
+        let icon = createMaterialIcon('eco', '130%')
+
+        // Add icon and text to button
+        button.style.display = 'flex';
+        button.style.alignItems = 'center';
+        button.appendChild(icon);
+        button.appendChild(document.createTextNode('Click to copy seed e-mail to clipboard'));
+
+        // Button click: call copy function
+        button.addEventListener('click', function () {
+            copySeedClientRegEmail();
+        });
+
+        // Append and show
+        overlay.appendChild(button);
+        document.body.appendChild(overlay);
+    }
+
 
     // 3rd ORDER FUNCTIONS
 
@@ -786,6 +1000,12 @@
                     copyRoleCheckboxValue('asset');
                 }, 1000);
             } // if asset role
+
+            if (window.location.href.includes('more_buttons_automation_70d24924')) {
+                setTimeout(() => {
+                    addGenerateSeedClientEmailConfirmButton();
+                }, 1000);
+            } // if seed employee (from seedClientReg)
         }
     }
 
@@ -845,11 +1065,21 @@
         }
     }
 
+    function handleLinkPageFilters() {
+        if (window.location.href.includes('/link/')) {
+            setTimeout(() => {
+                addGenerateSeedClientEmailButton();
+            }, 1000);
+        }
+    }
+
     // 4th ORDER FUNCTIONS
 
     function executescript() {
+        injectGoogleMaterialIcons();
         // Function to run your filters
         function runFilters() {
+            handleLinkPageFilters();
             handleAccessPageFilter();
             handleEditPageFilter();
             handleQRPageFilter();
