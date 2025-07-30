@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         occ-more-buttons
 // @namespace    http://tampermonkey.net/
-// @version      1.1.10
+// @version      1.1.11
 // @description  Adds more Buttons. So far: Set as manager, Set as user, Clear checkboxes and Generate QR poster.
 // @author       Ollie
 // @match        https://cloud.opus-safety.co.uk/*
@@ -63,7 +63,7 @@
 
     function copySeedClientRegEmail() {
         const getHtmlMessage = (uuid, regLink) => `
-  <h2 style="color: #002e72;">Welcome to the Opus Compliance Cloud</h2>
+  <h2 style="color: #002e72;">Welcome to Opus Compliance Cloud</h2>
 
   <p>Your Opus consultant has published an audit for you to view. To access your published audit reports, please follow the two simple registration steps below:</p>
 
@@ -121,7 +121,10 @@
             }
 
             const uuid = uuids[0];
-            const regLink = decodeURIComponent(new URLSearchParams(window.location.search).get('source_url'));
+            const regLink = (() => {
+                const url = decodeURIComponent(new URLSearchParams(window.location.search).get('source_url'));
+                return url + (url.includes('?') ? '&' : '?') + 'confirm=1';
+            })();
 
             const finalHtml = getHtmlMessage(uuid, regLink);
 
@@ -136,7 +139,7 @@
             } catch (err) {
                 alert('Failed to copy rich text: ' + err);
             }
-            window.location.href = regLink
+            window.location.href = window.location.href = window.location.origin + window.location.pathname;
         })();
     }
 
